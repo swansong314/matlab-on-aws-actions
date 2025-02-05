@@ -1,0 +1,34 @@
+name: 'Copy MATLAB AMI'
+description: 'Copies MATLAB AMI to specified AWS regions'
+
+inputs:
+  source_ami_id:
+    description: 'Source AMI ID to copy'
+    required: true
+  source_region:
+    description: 'Source AWS region'
+    required: true
+  target_regions:
+    description: 'Comma-separated list of target regions'
+    required: true
+
+outputs:
+  ami_map:
+    description: 'JSON map of region to AMI ID'
+    value: ${{ steps.copy-ami.outputs.ami_map }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Make script executable
+      shell: bash
+      run: chmod +x ./.github/actions/copy-ami/copy-ami.sh
+    
+    - name: Copy AMI
+      id: copy-ami
+      shell: bash
+      run: ${{ github.action_path }}/copy-ami.sh
+      env:
+        SOURCE_AMI_ID: ${{ inputs.source_ami_id }}
+        SOURCE_REGION: ${{ inputs.source_region }}
+        TARGET_REGIONS: ${{ inputs.target_regions }}

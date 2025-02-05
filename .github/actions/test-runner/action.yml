@@ -1,0 +1,54 @@
+name: 'MATLAB AWS Tests'
+description: 'Runs certification tests for MATLAB on AWS'
+
+inputs:
+  template_file:
+    description: 'CloudFormation template file'
+    required: true
+  ami_id:
+    description: 'AMI ID to test'
+    required: true
+  aws_region:
+    description: 'AWS region to run tests in'
+    required: true
+  vpc_id:
+    description: 'VPC ID for testing'
+    required: true
+  subnet_id:
+    description: 'Subnet ID for testing'
+    required: true
+  key_name:
+    description: 'SSH key name for testing'
+    required: true
+  client_ip:
+    description: 'Client IP CIDR for testing'
+    required: true
+  test_password:
+    description: 'Test instance password'
+    required: true
+
+outputs:
+  test_results:
+    description: 'Test results summary'
+    value: ${{ steps.run-tests.outputs.results }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Make script executable
+      shell: bash
+      run: chmod +x ./.github/actions/test-runner/run-tests.sh
+
+    - name: Run Certification Tests 
+      id: run-tests
+      shell: bash
+      run: ${{ github.action_path }}/run-tests.sh
+      env:
+        TEMPLATE_FILE: ${{ inputs.template_file }}
+        TEST_AMI_ID: ${{ inputs.ami_id }}
+        AWS_REGION: ${{ inputs.aws_region }}
+        TEST_VPC_ID: ${{ inputs.vpc_id }}
+        TEST_SUBNET_ID: ${{ inputs.subnet_id }}
+        TEST_KEY_NAME: ${{ inputs.key_name }}
+        TEST_CLIENT_IP: ${{ inputs.client_ip }}
+        TEST_PASSWORD: ${{ inputs.test_password }}
