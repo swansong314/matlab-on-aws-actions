@@ -1,4 +1,4 @@
-name: Build and Release MATLAB AWS
+name: Build MATLAB AWS
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
       matlab_release:
         description: 'MATLAB Release Version'
         required: true
-        default: 'R2024a'
+        default: 'R2024b'
 
 env:
   AWS_REGION: us-east-1
@@ -82,7 +82,7 @@ jobs:
           AMI_MAP="${AMI_MAP}}"
           echo "ami_map=$AMI_MAP" >> $GITHUB_OUTPUT
 
-      - name: Generate Template
+      - name: Generate CloudFormation Template
         run: |
           python .github/actions/template-gen/generate.py \
             --ami-map '${{ steps.copy-ami.outputs.ami_map }}' \
