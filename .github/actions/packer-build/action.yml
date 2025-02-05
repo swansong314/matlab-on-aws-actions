@@ -1,0 +1,38 @@
+name: 'MATLAB Packer Build'
+description: 'Builds MATLAB AMI using Packer'
+
+inputs:
+  matlab_release:
+    description: 'MATLAB release version'
+    required: true
+  aws_region:
+    description: 'AWS region for AMI build'
+    required: true
+
+outputs:
+  ami_id:
+    description: 'ID of the built AMI'
+    value: ${{ steps.get-ami.outputs.ami_id }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Packer Template
+      shell: bash
+      run: |
+        cd packer/v1
+        packer validate template.json
+
+    - name: Build AMI
+      shell: bash
+      run: ${{ github.action_path }}/build.sh
+      env:
+        MATLAB_RELEASE: ${{ inputs.matlab_release }}
+        AWS_REGION: ${{ inputs.aws_region }}
+
+    - name: Get AMI ID
+      id: get-ami
+      shell: bash
+      run: |
+        AMI_ID=$(jq -r '.builds[-1].artifact_id' packer/v1/manifest.json | cut -d':' -f2)
+        echo "ami_id=${AMI_ID}" >> $GITHUB_OUTPUT

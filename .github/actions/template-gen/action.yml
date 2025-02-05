@@ -1,0 +1,29 @@
+name: 'CloudFormation Template Generator'
+description: 'Generates CloudFormation template for MATLAB on AWS'
+
+inputs:
+  ami_id:
+    description: 'ID of the built AMI'
+    required: true
+  matlab_release:
+    description: 'MATLAB release version'
+    required: true
+  region:
+    description: 'AWS region'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Generate Template
+      shell: bash
+      run: |
+        python ${{ github.action_path }}/generate.py \
+          --ami-id ${{ inputs.ami_id }} \
+          --release ${{ inputs.matlab_release }} \
+          --region ${{ inputs.region }}

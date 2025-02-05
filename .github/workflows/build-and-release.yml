@@ -1,0 +1,133 @@
+name: Build and Release MATLAB AWS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      matlab_release:
+        description: 'MATLAB Release Version'
+        required: true
+        default: 'R2024a'
+
+env:
+  AWS_REGION: us-east-1
+  TARGET_REGIONS: >-
+    us-east-1,us-east-2,us-west-1,us-west-2,ca-central-1,
+    eu-central-1,eu-west-1,eu-west-2,eu-west-3,eu-north-1,
+    sa-east-1,me-south-1,ap-east-1,ap-south-1,ap-northeast-1,
+    ap-northeast-2,ap-southeast-1,ap-southeast-2
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Build MATLAB AMI
+        id: build
+        run: |
+          # Placeholder for Packer build step
+          # This will be implemented later with actual Packer configuration
+          echo "ami_id=ami-placeholder" >> $GITHUB_OUTPUT
+
+      - name: Copy AMI to Regions
+        id: copy-ami
+        run: |
+          SOURCE_AMI=${{ steps.build.outputs.ami_id }}
+          AMI_MAP="{"
+
+          # Convert comma-separated regions to array
+          IFS=',' read -ra REGIONS <<< "${{ env.TARGET_REGIONS }}"
+
+          for REGION in "${REGIONS[@]}"; do
+            REGION=$(echo $REGION | xargs)  # Trim whitespace
+
+            if [ "$REGION" != "${{ env.AWS_REGION }}" ]; then
+              # Copy AMI to target region
+              COPIED_AMI=$(aws ec2 copy-image \
+                --source-region ${{ env.AWS_REGION }} \
+                --source-image-id $SOURCE_AMI \
+                --name "MATLAB-${{ github.event.inputs.matlab_release || 'R2024a' }}-${REGION}" \
+                --region $REGION \
+                --output text --query 'ImageId')
+
+              # Wait for AMI to be available
+              aws ec2 wait image-available \
+                --region $REGION \
+                --image-ids $COPIED_AMI
+
+              TARGET_AMI=$COPIED_AMI
+            else
+              TARGET_AMI=$SOURCE_AMI
+            fi
+
+            # Add to AMI mapping
+            if [ "$REGION" != "${REGIONS[0]}" ]; then
+              AMI_MAP="${AMI_MAP},"
+            fi
+            AMI_MAP="${AMI_MAP}\"${REGION}\":{\"AMI\":\"${TARGET_AMI}\"}"
+          done
+
+          AMI_MAP="${AMI_MAP}}"
+          echo "ami_map=$AMI_MAP" >> $GITHUB_OUTPUT
+
+      - name: Generate Template
+        run: |
+          python .github/actions/template-gen/generate.py \
+            --ami-map '${{ steps.copy-ami.outputs.ami_map }}' \
+            --release ${{ github.event.inputs.matlab_release || 'R2024a' }}
+
+      - name: Run Certification Tests
+        uses: ./.github/actions/test-runner
+        with:
+          template_file: template/matlab-aws.json
+          ami_id: ${{ steps.build.outputs.ami_id }}
+          aws_region: ${{ env.AWS_REGION }}
+          vpc_id: ${{ secrets.TEST_VPC_ID }}
+          subnet_id: ${{ secrets.TEST_SUBNET_ID }}
+          key_name: ${{ secrets.TEST_KEY_NAME }}
+          client_ip: ${{ secrets.TEST_CLIENT_IP }}
+          test_password: ${{ secrets.TEST_PASSWORD }}
+
+      - name: Create Release
+        id: create_release
+        if: success()
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.event.inputs.matlab_release || 'R2024a' }}
+          release_name: MATLAB ${{ github.event.inputs.matlab_release || 'R2024a' }}
+          body: |
+            MATLAB on AWS CloudFormation Template Release
+
+            This release includes:
+            - Updated AMI mappings for all supported regions
+            - Certified and tested template
+            - Improved security configurations
+
+            For full documentation, please visit the repository README.
+          draft: false
+          prerelease: false
+
+      - name: Upload Template Asset
+        if: success()
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: template/matlab-aws.json
+          asset_name: aws-matlab-template.json
+          asset_content_type: application/json
