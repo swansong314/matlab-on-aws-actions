@@ -37,7 +37,7 @@ runs:
   steps:
     - name: Make script executable
       shell: bash
-      run: chmod +x ./.github/actions/copy-ami/run-tests.sh
+      run: chmod +x ./.github/actions/test-runner/run-tests.sh
 
     - name: Run Certification Tests 
       id: run-tests
