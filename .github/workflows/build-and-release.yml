@@ -45,50 +45,17 @@ jobs:
 
       - name: Copy AMI to Regions
         id: copy-ami
-        run: |
-          SOURCE_AMI=${{ steps.build.outputs.ami_id }}
-          AMI_MAP="{"
-
-          # Convert comma-separated regions to array
-          IFS=',' read -ra REGIONS <<< "${{ env.TARGET_REGIONS }}"
-
-          for REGION in "${REGIONS[@]}"; do
-            REGION=$(echo $REGION | xargs)  # Trim whitespace
-
-            if [ "$REGION" != "${{ env.AWS_REGION }}" ]; then
-              # Copy AMI to target region
-              COPIED_AMI=$(aws ec2 copy-image \
-                --source-region ${{ env.AWS_REGION }} \
-                --source-image-id $SOURCE_AMI \
-                --name "MATLAB-${{ github.event.inputs.matlab_release || 'R2024a' }}-${REGION}" \
-                --region $REGION \
-                --output text --query 'ImageId')
-
-              # Wait for AMI to be available
-              aws ec2 wait image-available \
-                --region $REGION \
-                --image-ids $COPIED_AMI
-
-              TARGET_AMI=$COPIED_AMI
-            else
-              TARGET_AMI=$SOURCE_AMI
-            fi
-
-            # Add to AMI mapping
-            if [ "$REGION" != "${REGIONS[0]}" ]; then
-              AMI_MAP="${AMI_MAP},"
-            fi
-            AMI_MAP="${AMI_MAP}\"${REGION}\":{\"AMI\":\"${TARGET_AMI}\"}"
-          done
-
-          AMI_MAP="${AMI_MAP}}"
-          echo "ami_map=$AMI_MAP" >> $GITHUB_OUTPUT
+        uses: ./.github/actions/copy-ami
+        with:
+          source_ami_id: ${{ steps.build.outputs.ami_id }}
+          source_region: ${{ env.AWS_REGION }}
+          target_regions: ${{ env.TARGET_REGIONS }}
 
       - name: Generate CloudFormation Template
-        run: |
-          python .github/actions/template-gen/generate.py \
-            --ami-map '${{ steps.copy-ami.outputs.ami_map }}' \
-            --release ${{ github.event.inputs.matlab_release || 'R2024a' }}
+        uses: ./.github/actions/template-gen
+        with:
+          ami_map: '{"us-east-1": "${{ steps.build.outputs.ami_id }}"}'
+          matlab_release: ${{ github.event.inputs.matlab_release || 'R2024b' }}
 
       - name: Run Certification Tests
         uses: ./.github/actions/test-runner
