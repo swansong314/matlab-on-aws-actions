@@ -41,7 +41,7 @@ jobs:
         run: |
           # Placeholder for Packer build step
           # This will be implemented later with actual Packer configuration
-          echo "ami_id=ami-placeholder" >> $GITHUB_OUTPUT
+          echo "ami_id=ami-1234567890abcdef0" >> $GITHUB_OUTPUT
 
       - name: Copy AMI to Regions
         id: copy-ami
