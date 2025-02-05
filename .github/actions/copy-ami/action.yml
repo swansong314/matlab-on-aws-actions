@@ -20,9 +20,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Make script executable
-      run: which bash
-    
     - name: Copy AMI
       id: copy-ami
       shell: bash
