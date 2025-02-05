@@ -20,6 +20,9 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Make script executable
+      run: chmod +x ./.github/actions/copy-ami/copy-ami.sh
+    
     - name: Copy AMI
       id: copy-ami
       shell: bash
