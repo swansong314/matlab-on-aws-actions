@@ -12,12 +12,12 @@ for region in ${TARGET_REGIONS//,/ }; do
     echo "Copying AMI to region: $region"
 
     # Copy AMI to target region
-    COPIED_AMI=$(aws ec2 copy-image \
-      --source-image-id "$SOURCE_AMI_ID" \
-      --source-region "$SOURCE_REGION" \
-      --region "$region" \
-      --name "matlab-aws-${region}" \
-      --output text --query 'ImageId')
+    # COPIED_AMI=$(aws ec2 copy-image \
+    #   --source-image-id "$SOURCE_AMI_ID" \
+    #   --source-region "$SOURCE_REGION" \
+    #   --region "$region" \
+    #   --name "matlab-aws-${region}" \
+    #   --output text --query 'ImageId')
 
     # Wait for AMI to be available
     # aws ec2 wait image-available --region "$region" --image-ids "$COPIED_AMI"
