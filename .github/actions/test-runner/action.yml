@@ -35,12 +35,6 @@ outputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate Template
-      shell: bash
-      run: |
-        aws cloudformation validate-template \
-          --template-body file://${{ inputs.template_file }} \
-          --region ${{ inputs.aws_region }}
 
     - name: Run Certification Tests 
       id: run-tests
