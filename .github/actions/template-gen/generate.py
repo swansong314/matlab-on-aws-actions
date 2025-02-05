@@ -34,6 +34,7 @@ def validate_ami_map(ami_map):
         return mapping
 
     except json.JSONDecodeError:
+        print(ami_map)
         raise ValueError("Invalid JSON format in AMI mapping")
 
 def generate_template(ami_map, release):
