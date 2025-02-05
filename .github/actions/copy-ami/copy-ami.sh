@@ -20,7 +20,8 @@ for region in ${TARGET_REGIONS//,/ }; do
       --output text --query 'ImageId')
 
     # Wait for AMI to be available
-    aws ec2 wait image-available --region "$region" --image-ids "$COPIED_AMI"
+    # aws ec2 wait image-available --region "$region" --image-ids "$COPIED_AMI"
+    echo "Skipping copy for now"
 
     # Add to AMI map
     AMI_MAP="${AMI_MAP}, \"${region}\": {\"AMI\": \"${COPIED_AMI}\"}"
