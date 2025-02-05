@@ -63,6 +63,8 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Run Certification Tests
         uses: ./.github/actions/test-runner
         with:
@@ -80,6 +82,8 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - uses: actions/checkout@v4
+      
       - name: Create Release
         id: create_release
         if: success()
