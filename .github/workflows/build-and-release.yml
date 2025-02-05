@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: Build and test MATLAB on AWS
+    name: Build MATLAB on AWS
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -58,11 +58,13 @@ jobs:
           matlab_release: ${{ github.event.inputs.matlab_release || 'R2024b' }}
   
   test:
+    name: Test MATLAB on AWS
     needs: build
     runs-on: ubuntu-latest
       permissions:
         id-token: write
         contents: write
+
     steps:
       - name: Run Certification Tests
         uses: ./.github/actions/test-runner
@@ -82,6 +84,7 @@ jobs:
     permissions:
       id-token: write
       contents: write
+    
     steps:
       - name: Create Release
         id: create_release
