@@ -61,9 +61,6 @@ jobs:
     name: Test MATLAB on AWS
     needs: build
     runs-on: ubuntu-latest
-      permissions:
-        id-token: write
-        contents: write
 
     steps:
       - name: Run Certification Tests
@@ -81,9 +78,6 @@ jobs:
   publish:
     needs: test
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      contents: write
     
     steps:
       - name: Create Release
