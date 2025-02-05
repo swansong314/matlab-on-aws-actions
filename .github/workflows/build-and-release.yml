@@ -56,7 +56,9 @@ jobs:
         with:
           ami_map: '{"us-east-1": {"AMI": "${{ steps.build.outputs.ami_id }}"}}'
           matlab_release: ${{ github.event.inputs.matlab_release || 'R2024b' }}
-
+  
+  test:
+    steps:
       - name: Run Certification Tests
         uses: ./.github/actions/test-runner
         with:
@@ -68,7 +70,9 @@ jobs:
           key_name: ${{ secrets.TEST_KEY_NAME }}
           client_ip: ${{ secrets.TEST_CLIENT_IP }}
           test_password: ${{ secrets.TEST_PASSWORD }}
-
+  
+  publish:
+    steps:
       - name: Create Release
         id: create_release
         if: success()
